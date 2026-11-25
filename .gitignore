@@ -1,0 +1,37 @@
+# Gradle & Build outputs
+.gradle/
+build/
+app/build/
+captures/
+.cxx/
+.externalNativeBuild/
+
+# Local environment & secrets
+local.properties
+*.keystore
+*.jks
+keystore.properties
+google-services.json
+
+# Compiled Android binaries
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+
+# IntelliJ / Android Studio / VS Code
+*.iml
+.idea/
+.vscode/
+*.hprof
+
+# OS & temporary files
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.log
+*.tmp
+*.bak
+*.swp
+*~
