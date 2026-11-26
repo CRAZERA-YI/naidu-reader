@@ -5,14 +5,14 @@
 <h1 align="center">奶读 (NaiDu)</h1>
 
 <p align="center">
-  一款优雅流畅的 Android 原生英语学习阅读器（Kotlin + Jetpack Compose + Material 3）<br/>
-  支持 <b>TXT / Markdown / EPUB</b> 小说式左右翻页阅读 · 双击查词与划词翻译 · 美/英真人原声 · SM-2 单词本与随身磨耳朵
+  一款优雅丝滑的 <b>Android &amp; iOS 双端原生英语学习阅读器</b><br/>
+  支持 <b>TXT / Markdown / EPUB</b> 小说式左右翻页阅读 · 双击查词与划词翻译 · 美/英真人原声 · SM-2 单词本与随身磨耳朵<br/>
+  iOS 端内置 <b>免费 Apple ID 自签 + SideStore 每日自动续签守护中心</b>（无需 MacBook 与付费开发者账号）
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Platform-Android%208.0%2B%20(API%2026%2B)-2E5E4E?style=flat-square" alt="Android 8.0+"/>
-  <img src="https://img.shields.io/badge/Language-Kotlin%201.9-7F52FF?style=flat-square" alt="Kotlin"/>
-  <img src="https://img.shields.io/badge/UI-Jetpack%20Compose%20%2B%20Material%203-4285F4?style=flat-square" alt="Compose"/>
+  <img src="https://img.shields.io/badge/Android-8.0%2B%20(Kotlin%20%2B%20Compose)-2E5E4E?style=flat-square" alt="Android 8.0+"/>
+  <img src="https://img.shields.io/badge/iOS-16.0%2B%20(SwiftUI%20%2B%20SideStore)-007AFF?style=flat-square" alt="iOS 16.0+"/>
   <img src="https://img.shields.io/badge/Offline%20Dict-41%2C106%20Words%20%2B%2033%2C867%20Lemmas-D9822B?style=flat-square" alt="Offline Dictionary"/>
 </p>
 
@@ -106,10 +106,22 @@ app/src/main/
    ```text
    app/build/outputs/apk/debug/app-debug.apk
    ```
-4. 通过 ADB 安装到手机或模拟器：
+4. 通过 ADB 安装正式优化版 APK 到手机或模拟器：
    ```bash
-   adb install -r app/build/outputs/apk/debug/app-debug.apk
+   gradle assembleRelease
+   adb install -r app/build/outputs/apk/release/app-release.apk
    ```
+
+---
+
+## iOS 版构建、免费自签与自动续签（无需 MacBook）
+
+- **云端自动打包**：仓库已配置 [`.github/workflows/ios-build.yml`](./.github/workflows/ios-build.yml)，每次推送自动在 GitHub Actions (`macos-latest`) 编译生成未签名安装包 **`NaiDu-iOS-v1.1.0.ipa`** 并上传至 [GitHub Releases](https://github.com/CRAZERA-YI/naidu-reader/releases)。
+- **SideStore 官方自动续签源地址**（在 SideStore → Sources 中添加）：
+  ```text
+  https://raw.githubusercontent.com/CRAZERA-YI/naidu-reader/main/sidestore-source.json
+  ```
+- **完整图文安装与「每日连 Wi-Fi 静默自动续签」配置步骤**：详见 **[docs/IOS_SIDESTORE_GUIDE.md](./docs/IOS_SIDESTORE_GUIDE.md)**。
 
 ---
 

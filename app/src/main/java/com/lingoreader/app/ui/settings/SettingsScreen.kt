@@ -48,6 +48,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -73,7 +74,7 @@ fun SettingsScreen(
     container: AppContainer
 ) {
     val scope = rememberCoroutineScope()
-    val settings by container.settingsRepo.settingsFlow.collectAsState(initial = AppSettings())
+    val settings by container.settingsRepo.settingsFlow.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
     var dictWordCount by remember { mutableIntStateOf(container.offlineDictionary.getWordCount()) }
@@ -388,17 +389,19 @@ fun SettingsScreen(
                         }
                     }
                     Spacer(Modifier.height(8.dp))
+                    var speedDraft by remember(settings.ttsSpeed) { mutableFloatStateOf(settings.ttsSpeed) }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("语速", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.width(44.dp))
                         Slider(
-                            value = settings.ttsSpeed,
-                            onValueChange = { spd ->
-                                scope.launch { container.settingsRepo.updateTtsSettings(settings.ttsAccent, spd) }
+                            value = speedDraft,
+                            onValueChange = { speedDraft = it },
+                            onValueChangeFinished = {
+                                scope.launch { container.settingsRepo.updateTtsSettings(settings.ttsAccent, speedDraft) }
                             },
                             valueRange = 0.75f..1.35f,
                             modifier = Modifier.weight(1f)
                         )
-                        Text("%.2fx".format(settings.ttsSpeed), style = MaterialTheme.typography.labelMedium, modifier = Modifier.width(44.dp))
+                        Text("%.2fx".format(speedDraft), style = MaterialTheme.typography.labelMedium, modifier = Modifier.width(44.dp))
                     }
                 }
             }
@@ -424,15 +427,19 @@ fun SettingsScreen(
                     }
 
                     Spacer(Modifier.height(10.dp))
+                    var fontDraft by remember(settings.fontSizeSp) { mutableFloatStateOf(settings.fontSizeSp.toFloat()) }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("字号", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.width(44.dp))
                         Slider(
-                            value = settings.fontSizeSp.toFloat(),
-                            onValueChange = { sz -> scope.launch { container.settingsRepo.updateFontSize(sz.toInt()) } },
+                            value = fontDraft,
+                            onValueChange = { fontDraft = it },
+                            onValueChangeFinished = {
+                                scope.launch { container.settingsRepo.updateFontSize(fontDraft.toInt()) }
+                            },
                             valueRange = 14f..30f,
                             modifier = Modifier.weight(1f)
                         )
-                        Text("${settings.fontSizeSp}px", style = MaterialTheme.typography.labelMedium, modifier = Modifier.width(44.dp))
+                        Text("${fontDraft.toInt()}px", style = MaterialTheme.typography.labelMedium, modifier = Modifier.width(44.dp))
                     }
 
                     Spacer(Modifier.height(8.dp))
@@ -454,15 +461,19 @@ fun SettingsScreen(
                     }
 
                     Spacer(Modifier.height(8.dp))
+                    var autoTurnDraft by remember(settings.autoTurnIntervalSec) { mutableFloatStateOf(settings.autoTurnIntervalSec.toFloat()) }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("自动翻页", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.width(64.dp))
                         Slider(
-                            value = settings.autoTurnIntervalSec.toFloat(),
-                            onValueChange = { sec -> scope.launch { container.settingsRepo.updateAutoTurnIntervalSec(sec.toInt()) } },
+                            value = autoTurnDraft,
+                            onValueChange = { autoTurnDraft = it },
+                            onValueChangeFinished = {
+                                scope.launch { container.settingsRepo.updateAutoTurnIntervalSec(autoTurnDraft.toInt()) }
+                            },
                             valueRange = 2f..60f,
                             modifier = Modifier.weight(1f)
                         )
-                        Text("${settings.autoTurnIntervalSec}秒", style = MaterialTheme.typography.labelMedium, modifier = Modifier.width(42.dp))
+                        Text("${autoTurnDraft.toInt()}秒", style = MaterialTheme.typography.labelMedium, modifier = Modifier.width(42.dp))
                     }
 
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))

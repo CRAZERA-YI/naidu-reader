@@ -2,6 +2,7 @@ package com.lingoreader.app.ui.bookshelf
 
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.util.LruCache
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -56,6 +57,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -64,6 +66,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontFamily
@@ -74,7 +77,9 @@ import androidx.compose.ui.unit.sp
 import com.lingoreader.app.AppContainer
 import com.lingoreader.app.data.model.Book
 import com.lingoreader.app.data.model.BookFormat
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -460,14 +465,38 @@ private fun BookListCard(
     }
 }
 
+private val CoverBitmapCache = object : LruCache<String, ImageBitmap>(32) {}
+
 @Composable
 private fun BookCoverThumb(book: Book, widthDp: Int, heightDp: Int) {
-    val coverBitmap = remember(book.coverPath) {
+    val coverBitmap by produceState<ImageBitmap?>(
+        initialValue = book.coverPath?.let { CoverBitmapCache.get(it) },
+        key1 = book.coverPath
+    ) {
         val path = book.coverPath
-        if (!path.isNullOrBlank() && File(path).exists()) {
-            runCatching { BitmapFactory.decodeFile(path)?.asImageBitmap() }.getOrNull()
-        } else {
-            null
+        if (path.isNullOrBlank()) {
+            value = null
+            return@produceState
+        }
+        CoverBitmapCache.get(path)?.let {
+            value = it
+            return@produceState
+        }
+        value = withContext(Dispatchers.IO) {
+            runCatching {
+                val f = File(path)
+                if (!f.exists()) return@runCatching null
+                val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                BitmapFactory.decodeFile(path, bounds)
+                var sample = 1
+                while (bounds.outWidth / sample > 240 || bounds.outHeight / sample > 340) {
+                    sample *= 2
+                }
+                val opts = BitmapFactory.Options().apply { inSampleSize = sample }
+                BitmapFactory.decodeFile(path, opts)?.asImageBitmap()?.also { bmp ->
+                    CoverBitmapCache.put(path, bmp)
+                }
+            }.getOrNull()
         }
     }
 
@@ -484,9 +513,10 @@ private fun BookCoverThumb(book: Book, widthDp: Int, heightDp: Int) {
             .background(Brush.verticalGradient(gradientColors)),
         contentAlignment = Alignment.Center
     ) {
-        if (coverBitmap != null) {
+        val bmp = coverBitmap
+        if (bmp != null) {
             Image(
-                bitmap = coverBitmap,
+                bitmap = bmp,
                 contentDescription = book.title,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()

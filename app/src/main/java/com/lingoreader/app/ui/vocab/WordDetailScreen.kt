@@ -94,7 +94,7 @@ fun WordDetailScreen(
 ) {
     val scope = rememberCoroutineScope()
     val allWords by container.vocabRepo.words.collectAsState()
-    val settings by container.settingsRepo.settingsFlow.collectAsState(initial = AppSettings())
+    val settings by container.settingsRepo.settingsFlow.collectAsState()
     val playingTag by container.ttsManager.playingTag.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 

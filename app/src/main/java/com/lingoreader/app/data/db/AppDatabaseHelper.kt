@@ -22,6 +22,10 @@ class AppDatabaseHelper(context: Context) : SQLiteOpenHelper(
     private val gson = Gson()
     private val contextsType = object : TypeToken<List<VocabContext>>() {}.type
 
+    init {
+        setWriteAheadLoggingEnabled(true)
+    }
+
     companion object {
         private const val DATABASE_NAME = "lingoreader_app.db"
         private const val DATABASE_VERSION = 3

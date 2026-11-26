@@ -1,5 +1,7 @@
 package com.lingoreader.app.data.model
 
+import androidx.compose.runtime.Immutable
+
 enum class BookFormat(val label: String, val extension: String) {
     TXT("TXT", "txt"),
     MD("MD", "md"),
@@ -18,6 +20,7 @@ enum class BookFormat(val label: String, val extension: String) {
     }
 }
 
+@Immutable
 data class Book(
     val id: String,
     val title: String,
@@ -40,6 +43,7 @@ data class Book(
         }
 }
 
+@Immutable
 data class Chapter(
     val index: Int,
     val title: String,
@@ -47,6 +51,7 @@ data class Chapter(
     val baseUrl: String? = null
 )
 
+@Immutable
 data class ParsedBook(
     val title: String,
     val author: String,
@@ -54,6 +59,7 @@ data class ParsedBook(
     val chapters: List<Chapter>
 )
 
+@Immutable
 data class VocabContext(
     val sentence: String,
     val bookId: String = "",
@@ -63,6 +69,7 @@ data class VocabContext(
     val addedAt: Long = System.currentTimeMillis()
 )
 
+@Immutable
 data class VocabWord(
     val id: Long = 0L,
     val word: String,
@@ -125,6 +132,7 @@ data class VocabWord(
     fun isDue(now: Long = System.currentTimeMillis()): Boolean = nextReviewAt <= now
 }
 
+@Immutable
 data class DailyStudyStat(
     val dateKey: String,
     val reviewedCount: Int = 0,
@@ -178,23 +186,27 @@ enum class ReviewRating(val label: String, val quality: Int) {
     EASY("简单", 5)
 }
 
+@Immutable
 data class ExampleSentence(
     val english: String,
     val chinese: String,
     val source: String = ""
 )
 
+@Immutable
 data class DetailedSense(
     val meaning: String,
     val detailPos: String = "",
     val examples: List<ExampleSentence> = emptyList()
 )
 
+@Immutable
 data class SenseGroup(
     val pos: String,
     val senses: List<DetailedSense>
 )
 
+@Immutable
 data class CollinsSense(
     val index: Int,
     val pos: String,
@@ -203,32 +215,38 @@ data class CollinsSense(
     val examples: List<ExampleSentence> = emptyList()
 )
 
+@Immutable
 data class WordForm(
     val label: String,
     val value: String
 )
 
+@Immutable
 data class PhraseItem(
     val phrase: String,
     val meaning: String
 )
 
+@Immutable
 data class SynonymGroup(
     val pos: String,
     val meaning: String,
     val words: List<String>
 )
 
+@Immutable
 data class RelatedWordEntry(
     val word: String,
     val meaning: String
 )
 
+@Immutable
 data class RelatedWordGroup(
     val pos: String,
     val words: List<RelatedWordEntry>
 )
 
+@Immutable
 data class TranslationResult(
     val query: String,
     val displayWord: String = query,
@@ -315,6 +333,7 @@ enum class OnlineEngine(val id: String, val label: String, val desc: String) {
     }
 }
 
+@Immutable
 data class AppSettings(
     val readerTheme: ReaderTheme = ReaderTheme.SEPIA,
     val fontSizeSp: Int = 19,

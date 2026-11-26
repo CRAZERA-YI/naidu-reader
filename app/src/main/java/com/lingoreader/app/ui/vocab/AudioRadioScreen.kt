@@ -67,7 +67,7 @@ fun AudioRadioScreen(
 ) {
     val view = LocalView.current
     val allWords by container.vocabRepo.words.collectAsState()
-    val settings by container.settingsRepo.settingsFlow.collectAsState(initial = AppSettings())
+    val settings by container.settingsRepo.settingsFlow.collectAsState()
 
     var scopeFilter by remember { mutableStateOf(ReviewScope.DUE) }
     var repeatCount by remember { mutableIntStateOf(2) }

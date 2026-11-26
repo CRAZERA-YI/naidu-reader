@@ -13,12 +13,16 @@ local.properties
 keystore.properties
 google-services.json
 
-# Compiled Android binaries
+# Compiled Android & iOS binaries
 *.apk
 *.aab
 *.ap_
 *.dex
 *.class
+*.ipa
+ios/*.xcodeproj/
+ios/build/
+build_ipa/
 
 # IntelliJ / Android Studio / VS Code
 *.iml

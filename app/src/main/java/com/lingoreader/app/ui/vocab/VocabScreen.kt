@@ -130,7 +130,7 @@ fun VocabScreen(
     val scope = rememberCoroutineScope()
     val words by container.vocabRepo.words.collectAsState()
     val studyLogs by container.vocabRepo.studyLogs.collectAsState()
-    val settings by container.settingsRepo.settingsFlow.collectAsState(initial = AppSettings())
+    val settings by container.settingsRepo.settingsFlow.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
     var searchQuery by remember { mutableStateOf("") }

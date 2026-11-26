@@ -7,6 +7,9 @@ import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -24,8 +27,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -120,8 +125,6 @@ private fun LingoReaderRoot(
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
-    val vocabList by container.vocabRepo.words.collectAsState()
-    val dueCount = vocabList.count { it.isDue() }
 
     LaunchedEffect(pendingUri) {
         val uri = pendingUri ?: return@LaunchedEffect
@@ -132,7 +135,7 @@ private fun LingoReaderRoot(
         }
     }
 
-    val showBottomBar = currentRoute in MAIN_TABS.map { it.route }
+    val showBottomBar = currentRoute == "bookshelf" || currentRoute == "vocab" || currentRoute == "settings"
 
     Scaffold(
         bottomBar = {
@@ -143,19 +146,19 @@ private fun LingoReaderRoot(
                         NavigationBarItem(
                             selected = selected,
                             onClick = {
-                                navController.navigate(tab.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
+                                if (!selected) {
+                                    navController.navigate(tab.route) {
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
                                     }
-                                    launchSingleTop = true
-                                    restoreState = true
                                 }
                             },
                             icon = {
-                                if (tab.route == "vocab" && dueCount > 0) {
-                                    BadgedBox(badge = { Badge { Text(dueCount.coerceAtMost(99).toString()) } }) {
-                                        Icon(tab.icon, contentDescription = tab.label)
-                                    }
+                                if (tab.route == "vocab") {
+                                    VocabNavBadgeIcon(container = container, icon = tab.icon, label = tab.label)
                                 } else {
                                     Icon(tab.icon, contentDescription = tab.label)
                                 }
@@ -176,7 +179,11 @@ private fun LingoReaderRoot(
         ) {
             NavHost(
                 navController = navController,
-                startDestination = "bookshelf"
+                startDestination = "bookshelf",
+                enterTransition = { fadeIn(animationSpec = tween(150)) },
+                exitTransition = { fadeOut(animationSpec = tween(120)) },
+                popEnterTransition = { fadeIn(animationSpec = tween(150)) },
+                popExitTransition = { fadeOut(animationSpec = tween(120)) }
             ) {
                 composable("bookshelf") {
                     BookshelfScreen(
@@ -267,5 +274,25 @@ private fun LingoReaderRoot(
                 }
             }
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun VocabNavBadgeIcon(
+    container: AppContainer,
+    icon: ImageVector,
+    label: String
+) {
+    val vocabList by container.vocabRepo.words.collectAsState()
+    val dueCount by remember(vocabList) {
+        derivedStateOf { vocabList.count { it.isDue() } }
+    }
+    if (dueCount > 0) {
+        BadgedBox(badge = { Badge { Text(dueCount.coerceAtMost(99).toString()) } }) {
+            Icon(icon, contentDescription = label)
+        }
+    } else {
+        Icon(icon, contentDescription = label)
     }
 }

@@ -162,15 +162,14 @@ class VocabRepository(
             null
         }
         val mergedContexts = mergeContexts(existing.allContexts, newCtx)
-        db.updateVocab(
-            existing.copy(
-                contexts = mergedContexts,
-                contextSentence = existing.contextSentence.ifBlank { cleanSentence },
-                encounterCount = existing.encounterCount + 1,
-                updatedAt = now
-            )
+        val updated = existing.copy(
+            contexts = mergedContexts,
+            contextSentence = existing.contextSentence.ifBlank { cleanSentence },
+            encounterCount = existing.encounterCount + 1,
+            updatedAt = now
         )
-        refresh()
+        db.updateVocab(updated)
+        replaceWordInMemory(updated)
     }
 
     suspend fun addManualWord(
@@ -302,51 +301,56 @@ class VocabRepository(
     }
 
     suspend fun updateWord(word: VocabWord) = withContext(Dispatchers.IO) {
-        db.updateVocab(word)
-        refresh()
+        val updated = word.copy(updatedAt = System.currentTimeMillis())
+        db.updateVocab(updated)
+        replaceWordInMemory(updated)
     }
 
     suspend fun toggleStar(word: VocabWord) = withContext(Dispatchers.IO) {
-        db.updateVocab(word.copy(starred = !word.starred))
-        refresh()
+        val updated = word.copy(starred = !word.starred, updatedAt = System.currentTimeMillis())
+        db.updateVocab(updated)
+        replaceWordInMemory(updated)
     }
 
     suspend fun markMastered(word: VocabWord) = withContext(Dispatchers.IO) {
         val now = System.currentTimeMillis()
         val thirtyDays = 30L * 24L * 60L * 60L * 1000L
-        db.updateVocab(
-            word.copy(
-                repetitions = maxOf(4, word.repetitions),
-                intervalDays = maxOf(30, word.intervalDays),
-                nextReviewAt = now + thirtyDays,
-                updatedAt = now
-            )
+        val updated = word.copy(
+            repetitions = maxOf(4, word.repetitions),
+            intervalDays = maxOf(30, word.intervalDays),
+            nextReviewAt = now + thirtyDays,
+            updatedAt = now
         )
-        refresh()
+        db.updateVocab(updated)
+        replaceWordInMemory(updated)
     }
 
     suspend fun resetProgress(word: VocabWord) = withContext(Dispatchers.IO) {
         val now = System.currentTimeMillis()
-        db.updateVocab(
-            word.copy(
-                repetitions = 0,
-                intervalDays = 0,
-                easeFactor = 2.5,
-                nextReviewAt = now,
-                updatedAt = now
-            )
+        val updated = word.copy(
+            repetitions = 0,
+            intervalDays = 0,
+            easeFactor = 2.5,
+            nextReviewAt = now,
+            updatedAt = now
         )
-        refresh()
+        db.updateVocab(updated)
+        replaceWordInMemory(updated)
     }
 
     suspend fun removeWord(id: Long) = withContext(Dispatchers.IO) {
         db.deleteVocab(id)
-        refresh()
+        _words.value = _words.value.filterNot { it.id == id }
     }
 
     suspend fun removeWordByText(word: String) = withContext(Dispatchers.IO) {
+        val wl = word.trim().lowercase()
         db.deleteVocabByWord(word)
-        refresh()
+        _words.value = _words.value.filterNot { it.wordLower == wl }
+    }
+
+    private fun replaceWordInMemory(updated: VocabWord) {
+        _words.value = _words.value.map { if (it.id == updated.id) updated else it }
     }
 
     // ---- Batch Operations ----
@@ -407,7 +411,8 @@ class VocabRepository(
             reviewedDelta = 1,
             rememberedDelta = if (rating != ReviewRating.AGAIN) 1 else 0
         )
-        refresh()
+        replaceWordInMemory(updated)
+        _studyLogs.value = db.getAllStudyLogs()
         updated
     }
 

@@ -104,7 +104,7 @@ fun ReviewScreen(
 ) {
     val scope = rememberCoroutineScope()
     val allWords by container.vocabRepo.words.collectAsState()
-    val settings by container.settingsRepo.settingsFlow.collectAsState(initial = AppSettings())
+    val settings by container.settingsRepo.settingsFlow.collectAsState()
 
     var mode by remember { mutableStateOf(initialMode) }
     val queue = remember { mutableStateListOf<VocabWord>() }

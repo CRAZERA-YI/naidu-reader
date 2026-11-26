@@ -333,13 +333,21 @@ $chapterBodyHtml
   var isAnimating = false;
   var pendingDragDx = 0;
   var activeDragDir = 0; // -1 = dragging left (to next page), +1 = dragging right (to prev page)
+  var underLayerDirty = true;
 
   function syncUnderContent() {
-    if (underContentEl && contentEl) {
-      underContentEl.innerHTML = contentEl.innerHTML;
-      var dup = underContentEl.querySelector('#__lingo_end_sentinel');
-      if (dup) dup.removeAttribute('id');
-    }
+    underLayerDirty = true;
+  }
+
+  function flushUnderContentIfNeeded() {
+    if (!underLayerDirty || !underContentEl || !contentEl) return;
+    underLayerDirty = false;
+    var vh = Math.max(200, window.innerHeight);
+    var colW = Math.max(120, pageWidth - 2 * currentMarginPx);
+    applyColumnGeometryTo(underContentEl, pageWidth, vh, colW, currentMarginPx);
+    underContentEl.innerHTML = contentEl.innerHTML;
+    var dup = underContentEl.querySelector('#__lingo_end_sentinel');
+    if (dup) dup.removeAttribute('id');
   }
 
   function isWordChar(ch) {
@@ -384,7 +392,9 @@ $chapterBodyHtml
     var vh = Math.max(200, window.innerHeight);
     var colW = Math.max(120, pageWidth - 2 * currentMarginPx);
     applyColumnGeometryTo(contentEl, pageWidth, vh, colW, currentMarginPx);
-    applyColumnGeometryTo(underContentEl, pageWidth, vh, colW, currentMarginPx);
+    if (!underLayerDirty) {
+      applyColumnGeometryTo(underContentEl, pageWidth, vh, colW, currentMarginPx);
+    }
   }
 
   function computeTotalPages() {
@@ -510,6 +520,7 @@ $chapterBodyHtml
     var targetPage = currentPage + (dir < 0 ? 1 : -1);
     if (targetPage < 0 || targetPage >= totalPages) return;
 
+    flushUnderContentIfNeeded();
     underClipEl.style.visibility = 'visible';
     if (dir < 0) {
       // Forward: currentPage on top, nextPage underneath
@@ -945,7 +956,8 @@ $chapterBodyHtml
       return;
     }
 
-    // First tap: remember & either act immediately or wait briefly for possible 2nd tap
+    // First tap: if blank/margin area (no word under finger), act IMMEDIATELY in 0ms!
+    // Only wait briefly (175ms) when finger directly hit an English word (for possible double-tap lookup).
     lastTapTime = now;
     lastTapX = tapX;
     lastTapY = tapY;
@@ -954,11 +966,17 @@ $chapterBodyHtml
       handleSingleTapAction(tapX, tapY);
       lastTapTime = 0;
     } else {
-      cancelPendingSingleTap();
-      singleTapTimer = setTimeout(function() {
-        singleTapTimer = null;
+      var probeWord = findWordAtPoint(tapX, tapY);
+      if (!probeWord) {
         handleSingleTapAction(tapX, tapY);
-      }, 225);
+        lastTapTime = 0;
+      } else {
+        cancelPendingSingleTap();
+        singleTapTimer = setTimeout(function() {
+          singleTapTimer = null;
+          handleSingleTapAction(tapX, tapY);
+        }, 175);
+      }
     }
   }, { passive: false });
 

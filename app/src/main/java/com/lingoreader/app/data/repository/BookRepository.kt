@@ -108,8 +108,21 @@ class BookRepository(
 
     suspend fun updateProgress(bookId: String, chapterIndex: Int, scrollProgress: Float, totalChapters: Int) =
         withContext(Dispatchers.IO) {
-            db.updateBookProgress(bookId, chapterIndex, scrollProgress, totalChapters)
-            refreshBooks()
+            val clampedProgress = scrollProgress.coerceIn(0f, 1f)
+            val now = System.currentTimeMillis()
+            db.updateBookProgress(bookId, chapterIndex, clampedProgress, totalChapters)
+            _books.value = _books.value.map { b ->
+                if (b.id == bookId) {
+                    b.copy(
+                        currentChapter = chapterIndex,
+                        scrollProgress = clampedProgress,
+                        totalChapters = if (totalChapters > 0) totalChapters else b.totalChapters,
+                        lastReadAt = now
+                    )
+                } else {
+                    b
+                }
+            }
         }
 
     suspend fun deleteBook(book: Book) = withContext(Dispatchers.IO) {

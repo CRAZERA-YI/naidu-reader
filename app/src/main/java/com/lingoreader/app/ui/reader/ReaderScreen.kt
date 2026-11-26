@@ -120,7 +120,7 @@ fun ReaderScreen(
 ) {
     val scope = rememberCoroutineScope()
     val view = LocalView.current
-    val settings by container.settingsRepo.settingsFlow.collectAsState(initial = AppSettings())
+    val settings by container.settingsRepo.settingsFlow.collectAsState()
     val vocabList by container.vocabRepo.words.collectAsState()
     val playingAudioTag by container.ttsManager.playingTag.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -308,15 +308,19 @@ fun ReaderScreen(
             )
             val curChTitle = parsedBook?.chapters?.getOrNull(currentChapterIndex)?.title.orEmpty()
             if (existingSaved != null) {
-                container.vocabRepo.recordEncounterIfSaved(
-                    word = existingSaved.word,
-                    lemma = existingSaved.lemma,
-                    contextSentence = sentence,
-                    bookId = bookId,
-                    bookTitle = book?.title.orEmpty(),
-                    chapterIndex = currentChapterIndex,
-                    chapterTitle = curChTitle
-                )
+                // Defer passive encounter DB update slightly so popup opens with zero frame contention
+                container.applicationScope.launch {
+                    delay(300)
+                    container.vocabRepo.recordEncounterIfSaved(
+                        word = existingSaved.word,
+                        lemma = existingSaved.lemma,
+                        contextSentence = sentence,
+                        bookId = bookId,
+                        bookTitle = book?.title.orEmpty(),
+                        chapterIndex = currentChapterIndex,
+                        chapterTitle = curChTitle
+                    )
+                }
             }
             if (fast != null) {
                 val shouldAutoEnrich = !fast.isRichLoaded
@@ -424,10 +428,11 @@ fun ReaderScreen(
         wv.evaluateJavascript(js, null)
     }
 
-    // Live-apply graded vocabulary highlight changes to WebView (due/stubborn vs learning; mastered omitted)
-    LaunchedEffect(gradedHighlightSets, settings.highlightVocab, loadedChapterKey, webViewRef) {
+    // Live-apply graded vocabulary highlight changes to WebView (deferred while popup is open to avoid DOM jank!)
+    val isPopupOpen = popupState != null
+    LaunchedEffect(gradedHighlightSets, settings.highlightVocab, loadedChapterKey, webViewRef, isPopupOpen) {
         val wv = webViewRef ?: return@LaunchedEffect
-        if (loadedChapterKey.isEmpty()) return@LaunchedEffect
+        if (loadedChapterKey.isEmpty() || isPopupOpen) return@LaunchedEffect
         val dueJson = gson.toJson(gradedHighlightSets.first.take(2000))
         val learnJson = gson.toJson(gradedHighlightSets.second.take(2000))
         wv.evaluateJavascript(
@@ -512,6 +517,7 @@ fun ReaderScreen(
                         .navigationBarsPadding(),
                     factory = { ctx ->
                         LingoWebView(ctx).apply {
+                            setLayerType(View.LAYER_TYPE_HARDWARE, null)
                             setBackgroundColor(AndroidColor.parseColor(settings.readerTheme.bgHex))
                             this.settings.apply {
                                 javaScriptEnabled = true
@@ -804,7 +810,10 @@ fun ReaderScreen(
                                         .padding(bottom = 10.dp),
                                     verticalArrangement = Arrangement.spacedBy(10.dp)
                                 ) {
-                                    // Quick Font Size control
+                                    // Quick Font Size control (local slider state -> commit on release for zero lag!)
+                                    var quickFontDraft by remember(settings.fontSizeSp) {
+                                        mutableFloatStateOf(settings.fontSizeSp.toFloat())
+                                    }
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
                                         verticalAlignment = Alignment.CenterVertically,
@@ -819,9 +828,10 @@ fun ReaderScreen(
                                             Text("A-", modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp), fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                         }
                                         Slider(
-                                            value = settings.fontSizeSp.toFloat(),
-                                            onValueChange = { sz ->
-                                                scope.launch { container.settingsRepo.updateFontSize(sz.toInt()) }
+                                            value = quickFontDraft,
+                                            onValueChange = { quickFontDraft = it },
+                                            onValueChangeFinished = {
+                                                scope.launch { container.settingsRepo.updateFontSize(quickFontDraft.toInt()) }
                                             },
                                             valueRange = 14f..30f,
                                             modifier = Modifier.weight(1f).height(26.dp)
@@ -833,7 +843,7 @@ fun ReaderScreen(
                                         ) {
                                             Text("A+", modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp), fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                         }
-                                        Text("${settings.fontSizeSp}", style = MaterialTheme.typography.labelMedium, modifier = Modifier.width(24.dp))
+                                        Text("${quickFontDraft.toInt()}", style = MaterialTheme.typography.labelMedium, modifier = Modifier.width(24.dp))
                                     }
 
                                     // Quick 4-Theme Swatches
@@ -1503,7 +1513,11 @@ private fun ReaderStyleSheetContent(
             ThemeSwatchRow(selectedTheme = settings.readerTheme, onThemeSelected = onThemeChange)
         }
 
-        // Font Size
+        // Font Size, Line Height & Margins (local slider draft -> commit on release for silky 120fps drag!)
+        var fontDraft by remember(settings.fontSizeSp) { mutableFloatStateOf(settings.fontSizeSp.toFloat()) }
+        var lineDraft by remember(settings.lineHeight) { mutableFloatStateOf(settings.lineHeight) }
+        var marginDraft by remember(settings.horizontalMarginDp) { mutableFloatStateOf(settings.horizontalMarginDp.toFloat()) }
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -1518,8 +1532,9 @@ private fun ReaderStyleSheetContent(
                 Text("A-", modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp), fontWeight = FontWeight.Bold)
             }
             Slider(
-                value = settings.fontSizeSp.toFloat(),
-                onValueChange = { onFontSizeChange(it.toInt()) },
+                value = fontDraft,
+                onValueChange = { fontDraft = it },
+                onValueChangeFinished = { onFontSizeChange(fontDraft.toInt()) },
                 valueRange = 14f..30f,
                 modifier = Modifier.weight(1f)
             )
@@ -1530,22 +1545,22 @@ private fun ReaderStyleSheetContent(
             ) {
                 Text("A+", modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp), fontWeight = FontWeight.Bold)
             }
-            Text("${settings.fontSizeSp}", style = MaterialTheme.typography.labelMedium, modifier = Modifier.width(26.dp))
+            Text("${fontDraft.toInt()}", style = MaterialTheme.typography.labelMedium, modifier = Modifier.width(26.dp))
         }
 
-        // Line height & Margins
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text("行距", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.width(56.dp))
             Slider(
-                value = settings.lineHeight,
-                onValueChange = onLineHeightChange,
+                value = lineDraft,
+                onValueChange = { lineDraft = it },
+                onValueChangeFinished = { onLineHeightChange(lineDraft) },
                 valueRange = 1.35f..2.2f,
                 modifier = Modifier.weight(1f)
             )
-            Text("%.2f".format(settings.lineHeight), style = MaterialTheme.typography.labelMedium, modifier = Modifier.width(40.dp))
+            Text("%.2f".format(lineDraft), style = MaterialTheme.typography.labelMedium, modifier = Modifier.width(40.dp))
         }
 
         Row(
@@ -1554,12 +1569,13 @@ private fun ReaderStyleSheetContent(
         ) {
             Text("边距", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.width(56.dp))
             Slider(
-                value = settings.horizontalMarginDp.toFloat(),
-                onValueChange = { onMarginChange(it.toInt()) },
+                value = marginDraft,
+                onValueChange = { marginDraft = it },
+                onValueChangeFinished = { onMarginChange(marginDraft.toInt()) },
                 valueRange = 12f..38f,
                 modifier = Modifier.weight(1f)
             )
-            Text("${settings.horizontalMarginDp}dp", style = MaterialTheme.typography.labelMedium, modifier = Modifier.width(40.dp))
+            Text("${marginDraft.toInt()}dp", style = MaterialTheme.typography.labelMedium, modifier = Modifier.width(40.dp))
         }
 
         // Font family

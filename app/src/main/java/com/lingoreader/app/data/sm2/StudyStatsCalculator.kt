@@ -1,5 +1,6 @@
 package com.lingoreader.app.data.sm2
 
+import androidx.compose.runtime.Immutable
 import com.lingoreader.app.data.model.DailyStudyStat
 import com.lingoreader.app.data.model.VocabWord
 import java.time.Instant
@@ -7,6 +8,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
+@Immutable
 data class HeatmapDay(
     val dateKey: String,
     val dayOfMonth: Int,
@@ -16,11 +18,13 @@ data class HeatmapDay(
     val totalActivity: Int get() = reviewedCount + addedCount
 }
 
+@Immutable
 data class ForecastDay(
     val label: String,
     val dueCount: Int
 )
 
+@Immutable
 data class StudyAnalytics(
     val todayReviewed: Int,
     val todayRemembered: Int,

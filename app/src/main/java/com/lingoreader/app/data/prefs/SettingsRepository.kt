@@ -14,13 +14,20 @@ import com.lingoreader.app.data.model.OnlineEngine
 import com.lingoreader.app.data.model.PageTurnMode
 import com.lingoreader.app.data.model.ReaderFont
 import com.lingoreader.app.data.model.ReaderTheme
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "lingoreader_settings")
 
-class SettingsRepository(private val context: Context) {
+class SettingsRepository(
+    private val context: Context,
+    scope: CoroutineScope
+) {
 
     private object Keys {
         val READER_THEME = stringPreferencesKey("reader_theme")
@@ -46,7 +53,7 @@ class SettingsRepository(private val context: Context) {
         val SAMPLES_SEEDED = booleanPreferencesKey("samples_seeded_v1")
     }
 
-    val settingsFlow: Flow<AppSettings> = context.dataStore.data.map { prefs ->
+    val settingsFlow: StateFlow<AppSettings> = context.dataStore.data.map { prefs ->
         AppSettings(
             readerTheme = ReaderTheme.fromId(prefs[Keys.READER_THEME]),
             fontSizeSp = prefs[Keys.FONT_SIZE] ?: 19,
@@ -69,7 +76,7 @@ class SettingsRepository(private val context: Context) {
             aiApiKey = prefs[Keys.AI_API_KEY] ?: "",
             aiModel = prefs[Keys.AI_MODEL] ?: "deepseek-chat"
         )
-    }
+    }.distinctUntilChanged().stateIn(scope, SharingStarted.Eagerly, AppSettings())
 
     suspend fun getSettingsOnce(): AppSettings = settingsFlow.first()
 

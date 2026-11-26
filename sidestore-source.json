@@ -1,0 +1,43 @@
+{
+  "name": "奶读 (NaiDu) 官方自动续签源",
+  "identifier": "com.lingoreader.naidu.source",
+  "subtitle": "Android & iOS 原生英语学习阅读器 · 支持免费 Apple ID 自动续签",
+  "description": "将本源添加至 SideStore / AltStore 后，即可一键安装/更新「奶读 iOS 版」，并配合 StosVPN 与 iOS 快捷指令实现每 7 天后台 Wi-Fi 全自动免费续签。",
+  "iconURL": "https://raw.githubusercontent.com/CRAZERA-YI/naidu-reader/main/icon.jpeg",
+  "headerURL": "https://raw.githubusercontent.com/CRAZERA-YI/naidu-reader/main/icon.jpeg",
+  "website": "https://github.com/CRAZERA-YI/naidu-reader",
+  "tintColor": "#DB852E",
+  "featuredApps": [
+    "com.lingoreader.naidu"
+  ],
+  "apps": [
+    {
+      "name": "奶读",
+      "bundleIdentifier": "com.lingoreader.naidu",
+      "developerName": "CRAZERA-YI",
+      "subtitle": "沉浸式小说分页英语学习阅读器",
+      "localizedDescription": "奶读 (NaiDu) iOS 原生版：\n• 支持导入 TXT / Markdown / EPUB 英文原著，内置 5 种丝滑翻页动画、音量键翻页与定时自动翻页\n• 内置 4.1 万词 + 3.3 万词形还原离线词典，联网自动补全有道详尽释义与柯林斯英汉双解，支持美/英真人原声与自定义 AI 语境翻译\n• 单词本 2.0：5 大主动复习模式（SM-2 卡片/四选一/默写/听音辨义/原句填空）、随身磨耳朵后台电台、红膜自测与 28 天热力图\n• 内置 SideStore 签名有效期实时检测、到期前通知守护与每日 Wi-Fi 静默自动续签向导",
+      "iconURL": "https://raw.githubusercontent.com/CRAZERA-YI/naidu-reader/main/icon.jpeg",
+      "tintColor": "#DB852E",
+      "category": "education",
+      "versions": [
+        {
+          "version": "1.1.0",
+          "buildVersion": "2",
+          "date": "2026-11-26",
+          "localizedDescription": "首发 iOS 原生版（SwiftUI + WKWebView + SQLite3 离线词库），内置 SideStore 自动续签监测与守护中心。",
+          "downloadURL": "https://github.com/CRAZERA-YI/naidu-reader/releases/download/v1.1.0/NaiDu-iOS-v1.1.0.ipa",
+          "size": 5850000,
+          "minOSVersion": "16.0"
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {
+          "NSLocalNetworkUsageDescription": "用于本地学习与网络词典查询"
+        }
+      }
+    }
+  ],
+  "news": []
+}
