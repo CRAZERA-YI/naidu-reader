@@ -27,7 +27,7 @@
           "date": "2026-11-26",
           "localizedDescription": "首发 iOS 原生版（SwiftUI + WKWebView + SQLite3 离线词库），内置 SideStore 自动续签监测与守护中心。",
           "downloadURL": "https://github.com/CRAZERA-YI/naidu-reader/releases/download/v1.1.0/NaiDu-iOS-v1.1.0.ipa",
-          "size": 5850000,
+          "size": 7965808,
           "minOSVersion": "16.0"
         }
       ],
