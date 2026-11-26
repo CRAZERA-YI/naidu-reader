@@ -4,7 +4,7 @@ import zlib
 
 private let SQLITE_TRANSIENT_DESTRUCTOR = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 
-final class OfflineDictionary {
+final class OfflineDictionary: @unchecked Sendable {
     static let shared = OfflineDictionary()
 
     private let queue = DispatchQueue(label: "com.lingoreader.naidu.offlinedict", qos: .userInitiated)

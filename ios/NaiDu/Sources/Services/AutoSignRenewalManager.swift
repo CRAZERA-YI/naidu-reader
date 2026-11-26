@@ -1,6 +1,6 @@
 import Foundation
 import UIKit
-import UserNotifications
+@preconcurrency import UserNotifications
 
 struct ProvisioningSignatureInfo: Equatable {
     enum InstallChannel: String, Equatable {

@@ -800,7 +800,6 @@ private struct VolumeButtonPagingView: UIViewRepresentable {
 
     func makeUIView(context: Context) -> MPVolumeView {
         let view = MPVolumeView(frame: CGRect(x: -1000, y: -1000, width: 1, height: 1))
-        view.showsRouteButton = false
         context.coordinator.attach(to: view)
         return view
     }

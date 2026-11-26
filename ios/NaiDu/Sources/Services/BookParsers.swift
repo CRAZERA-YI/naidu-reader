@@ -50,7 +50,7 @@ enum BookParsers {
         if let utf8 = String(data: data, encoding: .utf8) {
             return utf8
         }
-        let gbEnc = CFStringConvertEncodingToNSStringEncoding(CFStringEncodings.GB_18030_2000.rawValue)
+        let gbEnc = CFStringConvertEncodingToNSStringEncoding(CFStringEncoding(CFStringEncodings.GB_18030_2000.rawValue))
         if let gb = String(data: data, encoding: String.Encoding(rawValue: gbEnc)) {
             return gb
         }
